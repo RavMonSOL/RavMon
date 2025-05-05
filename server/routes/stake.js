@@ -1,22 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const Staking = require('../models/Staking');
-// Remove unused import since staking is now client-side
-// const { stakeTokens } = require('../solana/staking');
+const User = require('../models/User');
 
 router.post('/', async (req, res) => {
   const { wallet, amount } = req.body;
   try {
-    let staking = await Staking.findOne({ wallet });
-    if (!staking) {
-      staking = new Staking({ wallet });
+    const user = await User.findOne({ wallet });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Please ensure your wallet is connected.' });
     }
 
-    // Remove the Solana staking call since it's handled on the client-side
-    // await stakeTokens(wallet, amount);
-
-    staking.amount += parseFloat(amount);
-    await staking.save();
+    user.ravBalance = (user.ravBalance || 0) + amount;
+    user.points += Math.floor(amount / 100);
+    await user.save();
 
     res.json({ success: true });
   } catch (error) {
